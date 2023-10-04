@@ -6,6 +6,7 @@
 
 ACaptureTheFlagProjectile::ACaptureTheFlagProjectile() 
 {
+	bReplicates = true;
 	// Use a sphere as a simple collision representation
 	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
 	CollisionComp->InitSphereRadius(5.0f);
@@ -26,6 +27,7 @@ ACaptureTheFlagProjectile::ACaptureTheFlagProjectile()
 	ProjectileMovement->MaxSpeed = 3000.f;
 	ProjectileMovement->bRotationFollowsVelocity = true;
 	ProjectileMovement->bShouldBounce = true;
+	ProjectileMovement->ProjectileGravityScale = 0.0f;
 
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;

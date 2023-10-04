@@ -49,6 +49,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Weapon")
 	void Fire();
 
+	UFUNCTION(BlueprintCallable, Server, Reliable)
+	void Fire_OnServer();
+
 protected:
 	/** Ends gameplay for this component. */
 	UFUNCTION()

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
+#include "Interfaces/OnlineSessionInterface.h"
 #include "CaptureTheFlagCharacter.generated.h"
 
 class UInputComponent;
@@ -20,8 +21,6 @@ class ACaptureTheFlagCharacter : public ACharacter
 	GENERATED_BODY()
 
 	/** Pawn mesh: 1st person view (arms; seen only by self) */
-	UPROPERTY(VisibleDefaultsOnly, Category=Mesh)
-	USkeletalMeshComponent* Mesh1P;
 
 	/** First person camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -39,12 +38,38 @@ class ACaptureTheFlagCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* MoveAction;
 
+	// Fire action
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	class UInputAction* FireAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Mesh, meta=(AllowPrivateAccess = "true"))
+	USkeletalMeshComponent* WeaponMesh;
+
+	UPROPERTY(EditDefaultsOnly, Category=Projectile)
+	TSubclassOf<class ACaptureTheFlagProjectile> ProjectileClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Mesh, meta=(AllowPrivateAccess = "true"))
+	UArrowComponent* ProjectileDirection;
 	
 public:
 	ACaptureTheFlagCharacter();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category=Mesh)
+	USkeletalMeshComponent* Mesh1P;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category=Values)
+	bool bHasFlag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values)
+	bool bIsBlue;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values)
+	bool bIsDeath;
+
 protected:
 	virtual void BeginPlay();
+
+	void Tick(float DeltaSeconds) override;
 
 public:
 		
@@ -52,17 +77,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
 
-	/** Bool for AnimBP to switch to another animation set */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon)
-	bool bHasRifle;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Gameplay)
+	FVector MuzzleOffset;
+	
+	void Fire();
+	
+	UFUNCTION(Server,Reliable)
+	void Fire_OnServer();
 
-	/** Setter to set the bool */
-	UFUNCTION(BlueprintCallable, Category = Weapon)
-	void SetHasRifle(bool bNewHasRifle);
+	bool CanShoot();
 
-	/** Getter for the bool */
-	UFUNCTION(BlueprintCallable, Category = Weapon)
-	bool GetHasRifle();
+	float shoot;
 
 protected:
 	/** Called for movement input */
@@ -70,11 +95,20 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-
-protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
 	// End of APawn interface
+
+	UFUNCTION(BlueprintCallable)
+	void CreateGameSession();
+
+	UFUNCTION(BlueprintCallable)
+	void JoinGameSession();
+
+	//Callbacks
+	void OnCreateSessionComplete(FName SessionName, bool bWasSuccess);
+	void OnFindSessionComplete(bool bWasSuccessful);
+	void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 
 public:
 	/** Returns Mesh1P subobject **/
@@ -82,6 +116,13 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
+	IOnlineSessionPtr OnlineSessionInterface;
 
+private:
+	FOnCreateSessionCompleteDelegate CreateSessionCompleteDelegate;
+	FOnFindSessionsCompleteDelegate FindSessionsCompleteDelegate;
+	FOnJoinSessionCompleteDelegate JoinSessionCompleteDelegate;
+
+	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };
 

@@ -20,6 +20,58 @@ UTP_WeaponComponent::UTP_WeaponComponent()
 
 void UTP_WeaponComponent::Fire()
 {
+	/* if (Character == nullptr || Character->GetController() == nullptr)
+	{
+		return;
+	}
+
+	// Try and fire a projectile
+	if (ProjectileClass != nullptr)
+	{
+		UWorld* const World = GetWorld();
+		if (World != nullptr)
+		{
+			APlayerController* PlayerController = Cast<APlayerController>(Character->GetController());
+			const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+			const FVector SpawnLocation = GetOwner()->GetActorLocation() + SpawnRotation.RotateVector(MuzzleOffset);
+	
+			//Set Spawn Collision Handling Override
+			FActorSpawnParameters ActorSpawnParams;
+			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+	
+			// Spawn the projectile at the muzzle
+			World->SpawnActor<ACaptureTheFlagProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+		}
+	}
+	
+	// Try and play the sound if specified
+	if (FireSound != nullptr)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, Character->GetActorLocation());
+	}
+	
+	// Try and play a firing animation if specified
+	if (FireAnimation != nullptr)
+	{
+		// Get the animation object for the arms mesh
+		UAnimInstance* AnimInstance = Character->GetMesh1P()->GetAnimInstance();
+		if (AnimInstance != nullptr)
+		{
+			AnimInstance->Montage_Play(FireAnimation, 1.f);
+		}
+	}*/
+	Fire_OnServer_Implementation();
+}
+
+void UTP_WeaponComponent::Fire_OnServer_Implementation()
+{
+	GEngine->AddOnScreenDebugMessage(
+		-1,
+		5.f,
+		FColor::Cyan,
+		FString::Printf(TEXT("xd"))
+		);
 	if (Character == nullptr || Character->GetController() == nullptr)
 	{
 		return;
@@ -73,10 +125,9 @@ void UTP_WeaponComponent::AttachWeapon(ACaptureTheFlagCharacter* TargetCharacter
 
 	// Attach the weapon to the First Person Character
 	FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
-	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("GripPoint")));
+	AttachToComponent(Character->GetMesh1P(), AttachmentRules, FName(TEXT("Hand_Gun")));
 	
 	// switch bHasRifle so the animation blueprint can switch to another animation set
-	Character->SetHasRifle(true);
 
 	// Set up action bindings
 	if (APlayerController* PlayerController = Cast<APlayerController>(Character->GetController()))
