@@ -2,49 +2,40 @@
 
 
 #include "Grenade.h"
-
 #include "Kismet/GameplayStatics.h"
 
 AGrenade::AGrenade()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	bReplicates = true;
+
+	const FString MeshPath = TEXT("/Game/Models/Grenade.Grenade");
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh Comp"));
 	MeshComponent->SetupAttachment(RootComponent);
-
+	MeshComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, *MeshPath));
+	
 	const FString SoundPath = TEXT("/Game/StarterContent/Audio/Explosion01.Explosion01");
 	ExplosionSound = LoadObject<USoundBase>(nullptr, *SoundPath);
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Projectile Movement"));
-	ProjectileMovement->InitialSpeed = 200.f;
+	ProjectileMovement->InitialSpeed = 1800.f;
+	ProjectileMovement->ProjectileGravityScale = 1.f;
 
-	RadialForce = CreateDefaultSubobject<URadialForceComponent>(TEXT("Radial Force"));
-	RadialForce->SetupAttachment(MeshComponent);
-	RadialForce->SetWorldLocation(MeshComponent->GetComponentLocation());
-	RadialForce->Radius = 500.f;
-	RadialForce->ImpulseStrength = 200000.0f;
-
-	Counter = 0;
-	HealthTime = 5.0f;
-	Damage = 100.0f;
+	SphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere Collider"));
+	SphereComponent->SetupAttachment(MeshComponent);
+	SphereComponent->SetCollisionProfileName(TEXT("OverlapAllDynamic"));
+	SphereComponent->SetSphereRadius(30.f);
 }
 
 void AGrenade::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
-void AGrenade::Tick(float DeltaTime)
+void AGrenade::Explode()
 {
-	Super::Tick(DeltaTime);
-	Counter += DeltaTime;
-	if(Counter >= HealthTime)
-	{
-		const UWorld* World = GetWorld();
-		UGameplayStatics::ApplyRadialDamage(World, RadialForce->ImpulseStrength, GetActorLocation(), RadialForce->Radius, nullptr, IgnoreActors);
-		RadialForce->FireImpulse();
-		UGameplayStatics::SpawnSound2D(World, ExplosionSound, 1.0f, 1.0f, 0.0f, nullptr, false, true);
-		Destroy();
-	}
+	const UWorld* World = GetWorld();
+	UGameplayStatics::SpawnSound2D(World, ExplosionSound, 1.0f, 1.0f, 0.0f, nullptr, false, true);
+	//Destroy();
 }

@@ -2,6 +2,7 @@
 
 #include "CaptureTheFlagCharacter.h"
 #include "CaptureTheFlagProjectile.h"
+#include "Grenade.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
@@ -9,6 +10,7 @@
 #include "Components/ArrowComponent.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
+#include "Net/UnrealNetwork.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -49,6 +51,8 @@ ACaptureTheFlagCharacter::ACaptureTheFlagCharacter():CreateSessionCompleteDelega
 	ProjectileDirection->SetupAttachment(WeaponMesh);
 
 	shoot = 0;
+	Health = 100.f;
+	GrenadeNumber = 2.f;
 
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if(OnlineSubsystem)
@@ -80,20 +84,26 @@ void ACaptureTheFlagCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-
 }
 
 void ACaptureTheFlagCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
+	
 	if(CanShoot())
 		return;
 	shoot += DeltaSeconds;
 }
 
+void ACaptureTheFlagCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ACaptureTheFlagCharacter, bIsGrenade);
+}
+
 void ACaptureTheFlagCharacter::Fire()
 {
+	if(!bIsRagdoll)
 	Fire_OnServer();
 }
 
@@ -106,13 +116,18 @@ bool ACaptureTheFlagCharacter::CanShoot()
 	return false;
 }
 
+void ACaptureTheFlagCharacter::SetIsGrenade_Implementation()
+{
+	bIsGrenade = true;
+}
+
 void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 {
 	if(!CanShoot())
 		return;
 	shoot = 0;
 	// Try and fire a projectile
-	if (ProjectileClass != nullptr)
+	if (ProjectileClass != nullptr && !bIsGrenade)
 	{
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
@@ -128,6 +143,24 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 	
 			// Spawn the projectile at the muzzle
 			World->SpawnActor<ACaptureTheFlagProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+		}
+	}
+	else if (GrenadeClass != nullptr && bIsGrenade)
+	{
+		UWorld* const World = GetWorld();
+		if(World != nullptr)
+		{
+			APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
+			const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+			const FVector SpawnLocation = ProjectileDirection->GetComponentLocation();
+	
+			//Set Spawn Collision Handling Override
+			FActorSpawnParameters ActorSpawnParams;
+			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+	
+			// Spawn the projectile at the muzzle
+			World->SpawnActor<AGrenade>(GrenadeClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
 }
@@ -151,6 +184,8 @@ void ACaptureTheFlagCharacter::SetupPlayerInputComponent(class UInputComponent* 
 
 		//Fire
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &ACaptureTheFlagCharacter::Fire);
+		
+		EnhancedInputComponent->BindAction(SelectWeaponAction, ETriggerEvent::Triggered, this, &ACaptureTheFlagCharacter::SelectWeapon);
 	}
 }
 
@@ -160,7 +195,7 @@ void ACaptureTheFlagCharacter::Move(const FInputActionValue& Value)
 	// input is a Vector2D
 	FVector2D MovementVector = Value.Get<FVector2D>();
 
-	if (Controller != nullptr)
+	if (Controller != nullptr && !bIsRagdoll)
 	{
 		// add movement 
 		AddMovementInput(GetActorForwardVector(), MovementVector.Y);
@@ -337,4 +372,28 @@ void ACaptureTheFlagCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinS
 			PlayerController->ClientTravel(Address, TRAVEL_Absolute);
 		}
 	}
+}
+
+void ACaptureTheFlagCharacter::SelectWeapon(const FInputActionValue& Value)
+{
+	FVector2D InputVector = Value.Get<FVector2D>();
+	GEngine->AddOnScreenDebugMessage(
+		-1,
+		 5.f,
+		 FColor::Blue,
+		 FString::Printf(TEXT("Input Vector: %f"), InputVector.X)
+		 );
+	if(InputVector.X == 1)
+	{
+		UnsetIsGrenade();
+	}
+	else if (InputVector.X == -1)
+	{
+		SetIsGrenade();
+	}
+}
+
+void ACaptureTheFlagCharacter::UnsetIsGrenade_Implementation()
+{
+	bIsGrenade =false;
 }

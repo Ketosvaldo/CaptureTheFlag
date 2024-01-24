@@ -42,11 +42,17 @@ class ACaptureTheFlagCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
 	class UInputAction* FireAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Input, meta=(AllowPrivateAccess = "true"))
+	class UInputAction* SelectWeaponAction;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Mesh, meta=(AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* WeaponMesh;
 
 	UPROPERTY(EditDefaultsOnly, Category=Projectile)
 	TSubclassOf<class ACaptureTheFlagProjectile> ProjectileClass;
+
+	UPROPERTY(EditDefaultsOnly, Category=Projectile)
+	TSubclassOf<class AGrenade> GrenadeClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Mesh, meta=(AllowPrivateAccess = "true"))
 	UArrowComponent* ProjectileDirection;
@@ -65,11 +71,25 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values)
 	bool bIsDeath;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values)
+	bool bIsRagdoll;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values)
+	int Health;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values)
+	int GrenadeNumber;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values, Replicated)
+	bool bIsGrenade;
 
 protected:
 	virtual void BeginPlay();
 
 	void Tick(float DeltaSeconds) override;
+
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
 		
@@ -86,6 +106,15 @@ public:
 	void Fire_OnServer();
 
 	bool CanShoot();
+
+	UFUNCTION(Server, Reliable)
+	void SetIsGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void UnsetIsGrenade();
+
+	UFUNCTION()
+	void SelectWeapon(const FInputActionValue& Value);
 
 	float shoot;
 
