@@ -193,6 +193,7 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 	}
 	else if (ShutGunClass != nullptr && bIsShutGun && !bIsGrenade && !bIsBoomerang )
 	{
+		
 		UWorld* const World = GetWorld();
 		if(World != nullptr)
 		{

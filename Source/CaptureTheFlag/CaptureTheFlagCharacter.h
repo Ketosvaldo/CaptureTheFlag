@@ -15,6 +15,7 @@ class UCameraComponent;
 class UAnimMontage;
 class USoundBase;
 
+
 UCLASS(config=Game)
 class ACaptureTheFlagCharacter : public ACharacter
 {
