@@ -127,6 +127,9 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void SetHaveBoomerang(bool state);
+
+	UFUNCTION(BlueprintCallable)
+	void ReactivarBoomerang();
 	
 	void SelectWeapon(const FInputActionValue& Value);
 
@@ -168,4 +171,3 @@ private:
 
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 };
-

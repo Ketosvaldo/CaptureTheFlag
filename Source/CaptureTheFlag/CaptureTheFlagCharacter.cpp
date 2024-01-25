@@ -103,6 +103,7 @@ void ACaptureTheFlagCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACaptureTheFlagCharacter, bIsGrenade);
 	DOREPLIFETIME(ACaptureTheFlagCharacter, bIsBoomerang);
+	DOREPLIFETIME(ACaptureTheFlagCharacter, bHaveBoomerang);
 }
 
 void ACaptureTheFlagCharacter::Fire()
@@ -149,7 +150,7 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			World->SpawnActor<ACaptureTheFlagProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
-	else if (GrenadeClass != nullptr && bIsGrenade && GrenadeNumber != 0)
+	else if (GrenadeClass != nullptr && bIsGrenade && GrenadeNumber != 0 && !bIsBoomerang)
 	{
 		UWorld* const World = GetWorld();
 		if(World != nullptr)
@@ -162,10 +163,12 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			//Set Spawn Collision Handling Override
 			FActorSpawnParameters ActorSpawnParams;
 			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-
+			ActorSpawnParams.Instigator = GetInstigator();
+			
 			GrenadeNumber -= 1;
 			// Spawn the projectile at the muzzle
-			World->SpawnActor<AGrenade>(GrenadeClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			//World->SpawnActor<AGrenade>(GrenadeClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			World->SpawnActor<ABoomerang>(BoomerangClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
 	else if (BoomerangClass != nullptr && bIsBoomerang && bHaveBoomerang)
@@ -181,11 +184,11 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			//Set Spawn Collision Handling Override
 			FActorSpawnParameters ActorSpawnParams;
 			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-			ActorSpawnParams.Instigator = this;
-			
-			SetHaveBoomerang(false);
+			ActorSpawnParams.Instigator = GetInstigator();
 			// Spawn the projectile at the muzzle
 			World->SpawnActor<ABoomerang>(BoomerangClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Blue, "Lo intente");
+			SetHaveBoomerang(false);
 		}
 	}
 }
@@ -431,4 +434,9 @@ void ACaptureTheFlagCharacter::SelectWeapon(const FInputActionValue& Value)
 void ACaptureTheFlagCharacter::UnsetIsGrenade_Implementation()
 {
 	bIsGrenade =false;
+}
+
+void ACaptureTheFlagCharacter::ReactivarBoomerang()
+{
+	SetHaveBoomerang(true);
 }

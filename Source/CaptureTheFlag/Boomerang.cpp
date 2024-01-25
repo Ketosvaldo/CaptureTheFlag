@@ -7,15 +7,18 @@
 // Sets default values
 ABoomerang::ABoomerang()
 {
-	bReplicates = true;
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	bReplicates = true;
 
 	BoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("Box Collision"));
 	RootComponent = BoxCollision;
 
+	const FString MeshPath = TEXT("/Game/Models/boomerang/source/Boomerang.Boomerang");
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Static Mesh"));
 	MeshComponent->SetupAttachment(BoxCollision);
+	MeshComponent->SetStaticMesh(LoadObject<UStaticMesh>(nullptr, *MeshPath));
 
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Projectile Movement"));
 	ProjectileMovement->InitialSpeed = 800.f;
