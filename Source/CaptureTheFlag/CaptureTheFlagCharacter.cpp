@@ -168,8 +168,7 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			
 			GrenadeNumber -= 1;
 			// Spawn the projectile at the muzzle
-			//World->SpawnActor<AGrenade>(GrenadeClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-			World->SpawnActor<ABoomerang>(BoomerangClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+			World->SpawnActor<AGrenade>(GrenadeClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
 	else if (BoomerangClass != nullptr && bIsBoomerang && bHaveBoomerang)
@@ -191,7 +190,7 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			SetHaveBoomerang(false);
 		}
 	}
-	else if (ShutGunClass != nullptr && bIsShutGun && !bIsGrenade && !bIsBoomerang )
+	else if (ShutGunClass != nullptr && bIsShutGun && !bIsGrenade && !bIsBoomerang)
 	{
 		
 		UWorld* const World = GetWorld();
