@@ -145,7 +145,7 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			World->SpawnActor<ACaptureTheFlagProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
-	else if (GrenadeClass != nullptr && bIsGrenade)
+	else if (GrenadeClass != nullptr && bIsGrenade && GrenadeNumber != 0)
 	{
 		UWorld* const World = GetWorld();
 		if(World != nullptr)
@@ -158,7 +158,8 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			//Set Spawn Collision Handling Override
 			FActorSpawnParameters ActorSpawnParams;
 			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
-	
+
+			GrenadeNumber -= 1;
 			// Spawn the projectile at the muzzle
 			World->SpawnActor<AGrenade>(GrenadeClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
@@ -283,7 +284,7 @@ void ACaptureTheFlagCharacter::OnCreateSessionComplete(FName SessionName, bool b
 		UWorld* World = GetWorld();
 		if(World)
 		{
-			World->ServerTravel(FString("/Game/ThirdPerson/Maps/ThirdPersonMap?listen"));
+			World->ServerTravel(FString("/Game/FirstPerson/Maps/PlayableLevel?listen"));
 		}
 	}
 	else
