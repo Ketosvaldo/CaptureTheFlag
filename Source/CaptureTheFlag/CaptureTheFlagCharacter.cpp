@@ -3,6 +3,7 @@
 #include "CaptureTheFlagCharacter.h"
 #include "CaptureTheFlagProjectile.h"
 #include "Grenade.h"
+#include "Boomerang.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "EnhancedInputComponent.h"
@@ -54,6 +55,8 @@ ACaptureTheFlagCharacter::ACaptureTheFlagCharacter():CreateSessionCompleteDelega
 	Health = 100.f;
 	GrenadeNumber = 2.f;
 
+	bHaveBoomerang = true;
+
 	IOnlineSubsystem* OnlineSubsystem = IOnlineSubsystem::Get();
 	if(OnlineSubsystem)
 	{
@@ -99,6 +102,7 @@ void ACaptureTheFlagCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProper
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ACaptureTheFlagCharacter, bIsGrenade);
+	DOREPLIFETIME(ACaptureTheFlagCharacter, bIsBoomerang);
 }
 
 void ACaptureTheFlagCharacter::Fire()
@@ -127,7 +131,7 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 		return;
 	shoot = 0;
 	// Try and fire a projectile
-	if (ProjectileClass != nullptr && !bIsGrenade)
+	if (ProjectileClass != nullptr && !bIsGrenade && !bIsBoomerang)
 	{
 		UWorld* const World = GetWorld();
 		if (World != nullptr)
@@ -162,6 +166,26 @@ void ACaptureTheFlagCharacter::Fire_OnServer_Implementation()
 			GrenadeNumber -= 1;
 			// Spawn the projectile at the muzzle
 			World->SpawnActor<AGrenade>(GrenadeClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
+		}
+	}
+	else if (BoomerangClass != nullptr && bIsBoomerang && bHaveBoomerang)
+	{
+		UWorld* const World = GetWorld();
+		if(World != nullptr)
+		{
+			APlayerController* PlayerController = Cast<APlayerController>(this->GetController());
+			const FRotator SpawnRotation = PlayerController->PlayerCameraManager->GetCameraRotation();
+			// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
+			const FVector SpawnLocation = ProjectileDirection->GetComponentLocation();
+	
+			//Set Spawn Collision Handling Override
+			FActorSpawnParameters ActorSpawnParams;
+			ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+			ActorSpawnParams.Instigator = this;
+			
+			SetHaveBoomerang(false);
+			// Spawn the projectile at the muzzle
+			World->SpawnActor<ABoomerang>(BoomerangClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 		}
 	}
 }
@@ -375,22 +399,32 @@ void ACaptureTheFlagCharacter::OnJoinSessionComplete(FName SessionName, EOnJoinS
 	}
 }
 
+void ACaptureTheFlagCharacter::SetIsBoomerang_Implementation(bool bState)
+{
+	bIsBoomerang = bState;
+}
+
+void ACaptureTheFlagCharacter::SetHaveBoomerang_Implementation(bool state)
+{
+	bHaveBoomerang = state;
+}
+
 void ACaptureTheFlagCharacter::SelectWeapon(const FInputActionValue& Value)
 {
 	FVector2D InputVector = Value.Get<FVector2D>();
-	GEngine->AddOnScreenDebugMessage(
-		-1,
-		 5.f,
-		 FColor::Blue,
-		 FString::Printf(TEXT("Input Vector: %f"), InputVector.X)
-		 );
 	if(InputVector.X == 1)
 	{
+		SetIsBoomerang(false);
 		UnsetIsGrenade();
 	}
 	else if (InputVector.X == -1)
 	{
 		SetIsGrenade();
+		SetIsBoomerang(false);
+	}
+	else if (InputVector.Y == 1)
+	{
+		SetIsBoomerang(true);
 	}
 }
 
