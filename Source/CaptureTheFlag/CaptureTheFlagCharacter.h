@@ -57,6 +57,9 @@ class ACaptureTheFlagCharacter : public ACharacter
 	UPROPERTY(EditDefaultsOnly, Category=Projectile)
 	TSubclassOf<class ABoomerang> BoomerangClass;
 
+	UPROPERTY(EditDefaultsOnly, Category=Projectile)
+	TSubclassOf<class ACaptureTheFlagProjectile> ShutGunClass;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Mesh, meta=(AllowPrivateAccess = "true"))
 	UArrowComponent* ProjectileDirection;
 	
@@ -92,6 +95,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values, Replicated)
 	bool bIsBoomerang;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Values, Replicated)
+	bool bIsShutGun;
 
 protected:
 	virtual void BeginPlay();
@@ -130,6 +136,11 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ReactivarBoomerang();
+
+	UFUNCTION(Server, Reliable)
+	void SetIsShutGun(bool state);
+	
+	
 	
 	void SelectWeapon(const FInputActionValue& Value);
 
