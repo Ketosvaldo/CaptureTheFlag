@@ -3,6 +3,7 @@
 
 #include "Boomerang.h"
 
+
 // Sets default values
 ABoomerang::ABoomerang()
 {
@@ -26,6 +27,8 @@ void ABoomerang::BeginPlay()
 void ABoomerang::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	FRotator ActorRotation = MeshComponent->GetComponentRotation();
+	ActorRotation.Add(0.f, 20.f, 0.f);
+	SetActorRotation(ActorRotation);
 }
 
